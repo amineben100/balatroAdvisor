@@ -395,6 +395,8 @@ def process_card_input(user_input, remaining_deck, previous_hand):
             return None
 
 
+# balatroAdvisor.py
+
 def main():
     clear_screen()
     display_hacker_banner()
@@ -422,10 +424,6 @@ def main():
             if user_input.lower() == 'q':
                 print("\nExiting Balatro Advisor... Stay sharp!\n")
                 break
-            elif user_input.lower() == 'planet':
-                manage_planet_cards()
-                # After managing, continue to main menu
-                continue
             else:
                 # Process the card input and display recommendations
                 current_hand = process_card_input(user_input, remaining_deck, previous_hand)
@@ -449,8 +447,15 @@ def main():
                         print_delayed(["\nExiting Balatro Advisor... Stay sharp!\n"])
                         exit(0)
                     else:
-                        # Handle unexpected inputs or new card strings
-                        print_delayed(["\nInvalid choice. Please select again."])
+                        # Attempt to process the input as a new set of cards
+                        new_user_input = choice
+                        # Process the new card input
+                        new_hand = process_card_input(new_user_input, remaining_deck, previous_hand)
+                        if new_hand:
+                            previous_hand = new_hand
+                        else:
+                            # If processing failed, inform the user
+                            print_delayed(["\nInvalid card input. Please try again.\n"])
 
                     input("\nPress Enter to continue...")
                     clear_screen()
@@ -465,6 +470,6 @@ def main():
             break
         else:
             print("Invalid choice. Please select a valid option.")
-
+            
 if __name__ == "__main__":
     main()
