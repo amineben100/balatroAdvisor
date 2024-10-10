@@ -42,7 +42,7 @@ def display_hacker_banner():
     print(banner)
 
 
-def print_delayed(lines, delay=0.05):
+def print_delayed(lines, delay=0.07):
     """Print lines with a small delay between each line."""
     for line in lines:
         print(line)
