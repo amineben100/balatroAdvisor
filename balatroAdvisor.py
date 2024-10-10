@@ -38,7 +38,7 @@ def display_hacker_banner():
 ██╔══██ ██╔══██║██║     ██╔══██║   ██║   ██╔══██║██║   ██║
 ██████╔╝██║  ██║███████╗██║  ██║   ██║   ██║  ██║╚██████╔╝
 ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ 
-                   Balatro Advisor v1.0                                  
+                   Balatro Advisor v2.1                                  
 {Style.RESET_ALL if COLORAMA_AVAILABLE else ''}
     """
     print(banner)
@@ -470,6 +470,6 @@ def main():
             break
         else:
             print("Invalid choice. Please select a valid option.")
-            
+
 if __name__ == "__main__":
     main()
