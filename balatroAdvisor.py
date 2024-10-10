@@ -2,7 +2,7 @@
 import os
 import time
 import threading
-from play import parse_playing_cards, find_best_hands
+from play import parse_playing_cards, find_best_hands, update_hand_scores
 from discard import recommend_discard_strategies
 from planetCards import PLANET_CARDS, list_planet_cards, add_planet_card, remove_planet_card
 
@@ -69,17 +69,19 @@ def manage_planet_cards():
                 if card.quantity > 0:
                     card.remove()
                     print(f"Removed one {planet_name} card. Total now: {card.quantity}")
+                    update_hand_scores()  # Update HAND_SCORES after removal
                 else:
                     print(f"No active {planet_name} cards to remove.")
             else:
                 print("Invalid Planet Card name. Please try again.")
         else:
             # Attempt to add a Planet Card
-            planet_name = user_input.title()
+            planet_name = user_input.strip().title()
             if planet_name in PLANET_CARDS:
                 card = PLANET_CARDS[planet_name]
                 card.add()
                 print(f"Added one {planet_name} card. Total now: {card.quantity}")
+                update_hand_scores()  # Update HAND_SCORES after addition
             else:
                 print("Invalid Planet Card name. Please try again.")
 def print_delayed(lines, delay=0.07):

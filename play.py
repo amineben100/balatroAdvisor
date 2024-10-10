@@ -161,28 +161,38 @@ def get_card_value(card):
     """Return the numerical value of a card based on VALUE_MAP."""
     value_str = card.split()[0]  # Extract the rank from the card string
     return VALUE_MAP.get(value_str, 0)  # Retrieve the value from VALUE_MAP, defaulting to 0 if not found
+def calculate_hand_score(hand_name, base_chip, base_multiplier, quantity, card):
+    """
+    Calculate the adjusted chip and multiplier based on Planet Cards.
 
+    Parameters:
+    - hand_name (str): The name of the poker hand.
+    - base_chip (int): The base chip value.
+    - base_multiplier (int): The base multiplier.
+    - quantity (int): Number of active Planet Cards for this hand.
+    - card (PlanetCard): The Planet Card object.
+
+    Returns:
+    - (adjusted_chip, adjusted_multiplier)
+    """
+    adjusted_chip = base_chip + (card.chip_value_bonus * quantity)
+    adjusted_multiplier = base_multiplier + (card.multiplier_bonus * quantity)
+    return adjusted_chip, adjusted_multiplier
 def update_hand_scores():
-    """
-    Update HAND_SCORES based on active Planet Cards.
-    This function modifies HAND_SCORES in place.
-    """
+    """Update HAND_SCORES based on active Planet Cards."""
     global HAND_SCORES
-    # Reset HAND_SCORES to BASE_HAND_SCORES
-    HAND_SCORES = BASE_HAND_SCORES.copy()
+    HAND_SCORES = BASE_HAND_SCORES.copy()  # Reset to base scores
 
-    # Apply bonuses from active Planet Cards
-    active_cards = get_active_planet_cards()
-    for card in active_cards:
-        hand = card.associated_hand
-        if hand in HAND_SCORES:
-            HAND_SCORES[hand] = (
-                HAND_SCORES[hand][0] + card.get_total_chip_bonus(),
-                HAND_SCORES[hand][1] + card.get_total_multiplier_bonus()
-            )
+    active_planets = get_active_planet_cards()
+
+    for card in active_planets:
+        associated_hand = card.associated_hand
+        if associated_hand in HAND_SCORES:
+            base_chip, base_multiplier = HAND_SCORES[associated_hand]
+            adjusted_chip, adjusted_multiplier = calculate_hand_score(associated_hand, base_chip, base_multiplier, card.quantity, card)
+            HAND_SCORES[associated_hand] = (adjusted_chip, adjusted_multiplier)
         else:
-            # If the hand is not in HAND_SCORES, optionally handle it
-            print(f"Warning: Hand '{hand}' not recognized in HAND_SCORES.")
+            print(f"Warning: Associated hand '{associated_hand}' for Planet Card '{card.name}' not found in HAND_SCORES.")
 
 def calculate_pattern_score(pattern_name, pattern_cards):
     """
