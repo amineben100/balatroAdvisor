@@ -2,9 +2,10 @@
 import os
 import time
 import threading
-from play import parse_playing_cards, find_best_hands, update_hand_scores, HAND_SCORES
+from typing import List
+from play import parse_playing_cards, find_best_hands, update_hand_scores
 from discard import recommend_discard_strategies
-from planetCards import PLANET_CARDS, list_planet_cards, add_planet_card, remove_planet_card, get_active_planet_cards
+from planetCards import PLANET_CARDS
 
 # Attempt to import colorama for colored output
 try:
@@ -42,7 +43,9 @@ def display_hacker_banner():
     """
     print(banner)
 
-
+def get_active_planet_cards():
+    """Retrieve all active Planet Cards."""
+    return [card for card in PLANET_CARDS.values() if card.quantity > 0]
 def manage_planet_cards():
     """Allow users to add or remove Planet Cards by typing the planet name or -planet name."""
     # Define secret planets
@@ -87,6 +90,7 @@ def manage_planet_cards():
                 update_hand_scores()  # Update HAND_SCORES after addition
             else:
                 print("Invalid Planet Card name. Please try again.")
+
 def get_shorthand(card):
     """
     Convert a full card name to its shorthand representation.
