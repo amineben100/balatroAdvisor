@@ -1,6 +1,26 @@
+# play.py
+
 import re
 from collections import Counter
 import itertools
+from planetCards import get_active_planet_cards
+
+# Defines the base hand scores
+BASE_HAND_SCORES = {
+    'High Card': (5, 1),
+    'Pair': (10, 2),
+    'Two Pair': (20, 2),
+    'Three of a Kind': (30, 3),
+    'Straight': (30, 4),
+    'Flush': (35, 4),
+    'Full House': (40, 4),
+    'Four of a Kind': (60, 7),
+    'Straight Flush': (100, 8),
+    'Royal Flush': (100, 8)
+}
+
+# Initialize HAND_SCORES as a copy of BASE_HAND_SCORES
+HAND_SCORES = BASE_HAND_SCORES.copy()
 
 # Define global maps for card ranks and chip values
 RANK_MAP = {
@@ -16,6 +36,10 @@ VALUE_MAP = {
 }
 
 def parse_playing_cards(s):
+    """
+    Parses a string of playing cards and returns a list of card names.
+    Example input: "ah kh qh jh 10h"
+    """
     suits = {'H': 'Heart', 'D': 'Diamond', 'S': 'Spade', 'C': 'Club'}
     values = {'A': 'Ace', 'J': 'Jack', 'Q': 'Queen', 'K': 'King'}
     # Use case-insensitive matching and allow multiple characters for card values (e.g., 10)
@@ -38,12 +62,19 @@ def parse_playing_cards(s):
     return cards, len(cards)
 
 def update_deck(cards):
+    """
+    Generates a full deck and removes the user’s cards to get the remaining deck.
+    """
     full_deck = {f"{v} {s}"
                  for v in (list(map(str, range(2, 11))) + ['Ace', 'Jack', 'Queen', 'King'])
                  for s in ['Heart', 'Diamond', 'Spade', 'Club']}
     return full_deck - set(cards)
 
 def evaluate_hand(cards):
+    """
+    Evaluates the given set of cards and identifies possible poker hands.
+    Returns a list of tuples: (pattern_name, list_of_cards_in_pattern)
+    """
     ranks = [RANK_MAP[card.split()[0]] for card in cards]
     suits = [card.split()[1] for card in cards]
     rank_counts = Counter(ranks)
@@ -126,33 +157,45 @@ def evaluate_hand(cards):
 
     return patterns
 
-# --- Additional Scoring System ---
+def get_card_value(card):
+    """Return the numerical value of a card based on VALUE_MAP."""
+    value_str = card.split()[0]  # Extract the rank from the card string
+    return VALUE_MAP.get(value_str, 0)  # Retrieve the value from VALUE_MAP, defaulting to 0 if not found
 
-HAND_SCORES = {
-    'High Card': (5, 1),
-    'Pair': (10, 2),
-    'Two Pair': (20, 2),
-    'Three of a Kind': (30, 3),
-    'Straight': (30, 4),
-    'Flush': (35, 4),
-    'Full House': (40, 4),
-    'Four of a Kind': (60, 7),
-    'Straight Flush': (100, 8),
-    'Royal Flush': (100, 8)
-}
+def update_hand_scores():
+    """
+    Update HAND_SCORES based on active Planet Cards.
+    This function modifies HAND_SCORES in place.
+    """
+    global HAND_SCORES
+    # Reset HAND_SCORES to BASE_HAND_SCORES
+    HAND_SCORES = BASE_HAND_SCORES.copy()
 
-def calculate_pattern_score(pattern, pattern_cards):
-    """Calculate the score for a single pattern and its cards."""
-    base_chips, mult = HAND_SCORES.get(pattern, (0, 0))
-    # Get the chip values of the cards involved
-    card_values = [VALUE_MAP[card.split()[0]] for card in pattern_cards]
-    card_chip_sum = sum(card_values)
-    # Prepare the calculation string
-    calculation_str = f"({base_chips} + " + " + ".join(map(str, card_values)) + f") x {mult}"
-    # Calculate the total score for this pattern
-    score = (base_chips + card_chip_sum) * mult
-    calculation_str += f" = {score}"
-    return score, calculation_str
+    # Apply bonuses from active Planet Cards
+    active_cards = get_active_planet_cards()
+    for card in active_cards:
+        hand = card.associated_hand
+        if hand in HAND_SCORES:
+            HAND_SCORES[hand] = (
+                HAND_SCORES[hand][0] + card.get_total_chip_bonus(),
+                HAND_SCORES[hand][1] + card.get_total_multiplier_bonus()
+            )
+        else:
+            # If the hand is not in HAND_SCORES, optionally handle it
+            print(f"Warning: Hand '{hand}' not recognized in HAND_SCORES.")
+
+def calculate_pattern_score(pattern_name, pattern_cards):
+    """
+    Calculate the score for a given pattern and its cards, considering active Planet Cards.
+    """
+    base_chip_value, base_multiplier = HAND_SCORES[pattern_name]
+    adjusted_chip_value = base_chip_value
+    adjusted_multiplier = base_multiplier
+
+    card_values = sum(get_card_value(card) for card in pattern_cards)
+    score = (adjusted_chip_value + card_values) * adjusted_multiplier
+    calculation = f"({adjusted_chip_value} + sum of card values) x {adjusted_multiplier} = {score}"
+    return score, calculation
 
 # --- New Function to Find the Best Hands ---
 
@@ -200,7 +243,7 @@ def find_best_hands(cards, top_n=5):
 def main():
     try:
         # Parse user input
-        user_input = input("Enter the playing cards string (e.g., 7h10h2s3dah9c): ")
+        user_input = input("Enter the playing cards string (e.g., 7h10h2s3dah9c): ").strip()
         cards, n = parse_playing_cards(user_input)
         remaining_deck = update_deck(cards)
 
@@ -208,6 +251,9 @@ def main():
         for card in cards:
             print(card)
         print(f"\nRemaining Deck: {len(remaining_deck)} cards")
+
+        # Update HAND_SCORES based on active Planet Cards
+        update_hand_scores()
 
         # Find the best subsets of 5 cards
         top_hands = find_best_hands(cards, top_n=5)

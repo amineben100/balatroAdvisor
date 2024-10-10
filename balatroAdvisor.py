@@ -4,6 +4,8 @@ import time
 import threading
 from play import parse_playing_cards, find_best_hands
 from discard import recommend_discard_strategies
+from planetCards import PLANET_CARDS, list_planet_cards, add_planet_card, remove_planet_card
+
 
 # Attempt to import colorama for colored output
 try:
@@ -42,6 +44,44 @@ def display_hacker_banner():
     print(banner)
 
 
+def manage_planet_cards():
+    """Allow users to add or remove Planet Cards by typing the planet name or -planet name."""
+    while True:
+        print("\n--- Planet Cards Menu ---")
+        # Display only planet names with their current quantities
+        for planet, card in PLANET_CARDS.items():
+            print(f"{planet}: {card.quantity}")
+
+        print("\nInstructions:")
+        print(" - To add a Planet Card, type its name (e.g., 'Earth').")
+        print(" - To remove a Planet Card, type '-' followed by its name (e.g., '-Earth').")
+        print(" - Type 'back' to return to the main menu.")
+
+        user_input = input("Your choice: ").strip()
+
+        if user_input.lower() == 'back':
+            break
+        elif user_input.startswith('-'):
+            # Attempt to remove a Planet Card
+            planet_name = user_input[1:].strip().title()
+            if planet_name in PLANET_CARDS:
+                card = PLANET_CARDS[planet_name]
+                if card.quantity > 0:
+                    card.remove()
+                    print(f"Removed one {planet_name} card. Total now: {card.quantity}")
+                else:
+                    print(f"No active {planet_name} cards to remove.")
+            else:
+                print("Invalid Planet Card name. Please try again.")
+        else:
+            # Attempt to add a Planet Card
+            planet_name = user_input.title()
+            if planet_name in PLANET_CARDS:
+                card = PLANET_CARDS[planet_name]
+                card.add()
+                print(f"Added one {planet_name} card. Total now: {card.quantity}")
+            else:
+                print("Invalid Planet Card name. Please try again.")
 def print_delayed(lines, delay=0.07):
     """Print lines with a small delay between each line."""
     for line in lines:
@@ -224,12 +264,12 @@ def update_deck(current_deck, cards_to_remove):
 
 def show_detailed_options():
     """Display menu options for further details."""
-    lines = [
-        "\nType 'p' to view all play recommendations, 'd' for all discard recommendations,",
-        "'deck' to view the cards remaining in the deck, or 'q' to quit."
-    ]
-    print_delayed(lines)
-    choice = input("\nYour choice: ").strip().lower()
+    print("\nOptions:")
+    print("p - View all play recommendations")
+    print("d - View all discard recommendations")
+    print("deck - View the cards remaining in the deck")
+    print("q - Quit")
+    choice = input("Your choice: ").strip().lower()
     return choice
 
 def display_all_play_recommendations(cards):
@@ -369,51 +409,62 @@ def main():
 
     while True:
         # Prompt for input
-        user_input = input("\nEnter the playing cards string (e.g., ahadjc10d4s3d2s2d) or 'q' to quit: ").strip()
+        print("\n--- Balatro Advisor Main Menu ---")
+        print("Options:")
+        print("1. Enter Playing Cards")
+        print("2. Manage Planet Cards")
+        print("3. Quit")
 
-        if user_input.lower() == 'q':
+        choice = input("Select an option (1-3): ").strip()
+
+        if choice == '1':
+            user_input = input("Enter the playing cards string (e.g., ahadjc10d4s3d2s2d): ").strip()
+            if user_input.lower() == 'q':
+                print("\nExiting Balatro Advisor... Stay sharp!\n")
+                break
+            elif user_input.lower() == 'planet':
+                manage_planet_cards()
+                # After managing, continue to main menu
+                continue
+            else:
+                # Process the card input and display recommendations
+                current_hand = process_card_input(user_input, remaining_deck, previous_hand)
+                if current_hand is None:
+                    continue  # If processing failed, prompt again
+
+                # Update the previous_hand for the next iteration
+                previous_hand = current_hand
+
+                # Main loop for detailed view options
+                while True:
+                    choice = show_detailed_options()
+
+                    if choice == 'p':
+                        display_all_play_recommendations(current_hand)
+                    elif choice == 'd':
+                        display_all_discard_recommendations(current_hand, remaining_deck)
+                    elif choice == 'deck':
+                        display_remaining_deck(remaining_deck)
+                    elif choice == 'q':
+                        print_delayed(["\nExiting Balatro Advisor... Stay sharp!\n"])
+                        exit(0)
+                    else:
+                        # Handle unexpected inputs or new card strings
+                        print_delayed(["\nInvalid choice. Please select again."])
+
+                    input("\nPress Enter to continue...")
+                    clear_screen()
+                    print(f"\nYour Hand: {format_hand(current_hand)}")
+
+        elif choice == '2':
+            manage_planet_cards()  # Directly access Planet Cards management
+            # After managing, continue to main menu
+            continue
+        elif choice == '3':
             print("\nExiting Balatro Advisor... Stay sharp!\n")
             break
-
-        # Process the card input and display recommendations
-        current_hand = process_card_input(user_input, remaining_deck, previous_hand)
-        if current_hand is None:
-            continue  # If processing failed, prompt again
-
-        # Update the previous_hand for the next iteration
-        previous_hand = current_hand
-
-        # Main loop for detailed view options
-        while True:
-            choice = show_detailed_options()
-
-            if choice == 'p':
-                display_all_play_recommendations(current_hand)
-            elif choice == 'd':
-                display_all_discard_recommendations(current_hand, remaining_deck)
-            elif choice == 'deck':
-                display_remaining_deck(remaining_deck)
-            elif choice == 'q':
-                print_delayed(["\nExiting Balatro Advisor... Stay sharp!\n"])
-                exit(0)
-            else:
-                # Check if the input is a new card string
-                valid_suits = {'h', 'd', 's', 'c'}
-                is_card_string = all(char.isalnum() or char in valid_suits for char in choice)
-                if is_card_string:
-                    current_hand = process_card_input(choice, remaining_deck, previous_hand)
-                    if current_hand is None:
-                        break  # If processing failed, go back to initial input
-                    else:
-                        previous_hand = current_hand  # Update for next comparison
-                        continue  # Continue with the updated hand
-                else:
-                    print_delayed(["\nInvalid choice. Please select again."])
-
-            input("\nPress Enter to continue...")
-            clear_screen()
-            print(f"\nYour Hand: {format_hand(current_hand)}")
-
+        else:
+            print("Invalid choice. Please select a valid option.")
 
 if __name__ == "__main__":
     main()
