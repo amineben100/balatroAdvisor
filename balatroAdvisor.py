@@ -123,7 +123,7 @@ def display_best_hand_recommendation(cards):
 
 def display_best_discard_recommendation(current_hand, best_play_pattern, remaining_deck):
     """Show the best discard recommendation."""
-    top_discards = recommend_discard_strategies(current_hand, remaining_deck, max_discards=4, top_n=1)
+    top_discards = recommend_discard_strategies(current_hand, remaining_deck, top_n=1)
     if top_discards:
         strategy = top_discards[0]
         if best_play_pattern and strategy['pattern'] == best_play_pattern and not strategy['discard']:
@@ -258,7 +258,7 @@ def display_all_play_recommendations(cards):
 
 def display_all_discard_recommendations(current_hand, remaining_deck):
     """Show all discard recommendations with probability and expected score."""
-    top_discards = recommend_discard_strategies(current_hand, remaining_deck, max_discards=4, top_n=5)
+    top_discards = recommend_discard_strategies(current_hand, remaining_deck, top_n=5)
     lines = ["\n>> Top 5 Discard Recommendations:"]
     if not top_discards:
         lines.append("\n>> No discard recommendations available.\n")
